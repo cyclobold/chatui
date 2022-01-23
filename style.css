@@ -1,0 +1,183 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "poppins", sans-serif;
+}
+
+.container {
+  width: 100%;
+  height: 100vh;
+  background-image: linear-gradient(to right, #1c00f2, #453f96);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.chatbox {
+  background: #1d61cd;
+  width: 50%;
+  min-width: 250px;
+  display: flex;
+}
+
+.col-1 {
+  flex: 1;
+  width: 100%;
+}
+
+.col-2 {
+  flex-basis: 250px;
+  background: #3874c9;
+}
+
+.msg-row {
+  display: flex;
+  align-items: center;
+  margin: 40px;
+}
+
+.msg-text {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 20px 40px;
+  border-radius: 8px;
+  flex-basis: 70%;
+  font-weight: 300;
+}
+
+.msg-text h2 {
+  font-weight: 400;
+  font-size: 22px;
+  margin-bottom: 10px;
+}
+
+.msg-img {
+  border-radius: 15%;
+  margin: 0 20px;
+  height: auto;
+}
+.pic {
+  width: 50px;
+  margin-left: 10px;
+}
+
+.msg-row2 {
+  justify-content: flex-end;
+}
+
+.send-area{
+  display: flex;
+}
+
+.send-btn{
+  width: 35%;
+}
+.pic2 {
+  width: 50px;
+  margin-right: 10px;
+}
+
+.col-1 input {
+  border: 0;
+  outline: none;
+  padding: 20px 40px;
+  background: #3874cd;
+  color: #fff;
+  width: 100%;
+  font-size: 16px;
+  font-weight: 300;
+}
+
+::placeholder {
+  color: #fff;
+}
+
+.col-2 h3 {
+  text-align: center;
+  margin-top: 40px;
+  font-weight: 400;
+}
+
+.col-2 ul {
+  list-style: none;
+  padding: 30px;
+}
+
+.col-2 ul li {
+  padding: 5px 0;
+}
+
+/* col-2 ul li ::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: red;
+  display: inline-block;
+  margin-right: 10px;
+}
+
+.col-2 ul li.online ::before {
+  background-color: greenyellow;
+}
+
+.col-2 ul li.offline ::before {
+  background-color: tomato;
+}
+
+.col-2 ul li.busy ::before {
+  background-color: yellow;
+} */
+
+.pic-two {
+  width: 50px;
+  height: auto;
+  position: absolute;
+  right: 750px;
+  bottom: 198px;
+}
+
+.img-one {
+  width: 10px;
+  position: absolute;
+  top: 290px;
+  right: 680px;
+}
+
+.img-two {
+  width: 10px;
+  position: absolute;
+  top: 320px;
+  right: 680px;
+}
+
+.img-three {
+  width: 10px;
+  position: absolute;
+  top: 350px;
+  right: 680px;
+}
+
+.img-four {
+  width: 10px;
+  position: absolute;
+  top: 378px;
+  right: 680px;
+}
+
+.img-five {
+  width: 10px;
+  position: absolute;
+  top: 405px;
+  right: 680px;
+}
+
+
+@media screen and (max-width: 760px){
+  img.pic, img.pic-two, img.pic2{
+    display: none;
+  }
+
+
+}

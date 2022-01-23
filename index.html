@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css" integrity="sha384-zCbKRCUGaJDkqS1kPbPd7TveP5iyJE0EjAuZQTgFLD2ylzuqKfdKlfG/eSrtxUkn" crossorigin="anonymous">
+    
+    
+    
+</head>
+<body>
+    
+        <div class="container bg-light p-5">
+                <div class="row mt-5">
+                        <div class="col-md-10 m-auto bg-dark text-light p-3">
+                                <h2><strong>Cyclobold Chat</strong></h2>
+                                <hr>
+                                <p>
+                                    A secure way to chat with someone in realtime without any overhead. <u>No log in required...</u>
+                                </p>
+
+                                <hr>
+
+                                <button type='button' class='btn btn-md btn-primary' id="create-invitation-btn">Create an Invitation</button>
+                        </div>
+                </div>
+        </div>
+      
+        <div id="modals-loader"></div>
+
+        <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-fQybjgWLrvvRgtW6bFlB7jaZrFsaBXjsOMm/tB9LTS58ONXgqbR9W8oWht/amnpF" crossorigin="anonymous"></script>
+        <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
+        <script src="vendors/js/loaders.js"></script>
+        <script src="vendors/js/axios.min.js"></script>
+        <script>
+            const createInvitationBtn = document.querySelector("#create-invitation-btn");
+
+            
+
+            createInvitationBtn.addEventListener("click", function(){
+
+                //start the loader..
+                startLoader();
+               
+                const peer = new Peer();
+                //Generate the session id..
+                peer.on("open", function(id){
+                    console.log("COnnection : ", id);
+
+                    //id has been generated so redirected the user to the waiting page..
+                    //save to localhost..
+                    localStorage.setItem("_bold_chat_key", JSON.stringify(id));
+
+                   stopLoader();
+
+                    //show the send modal form
+                    showInvitationForm(id);
+
+   
+
+                })
+
+
+            })
+
+
+
+            function showInvitationForm(id){
+
+                const invitation_form = `<div class="modal" tabindex="-1" id="invitation-form-modal" data-backdrop='false'>
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Invite someone to this chat...</h5>
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                    </button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="container">
+                                                        <div class="row">
+                                                            <div class="col-md-12">
+                                                                <h5>Your connection key is <br><mark>${id}</mark></h5>
+                                                                <hr>
+                                                                <p>You can copy and send this connection key to someone directly or use this form to email it to them...</p>
+                                                                <hr>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="row">
+                                                            <div class="col-md-12 m-auto">
+                                                                <form id="invite-peer-form" method="POST">
+                                                                    <div class="form-group">
+                                                                        <label>Enter Peer's email address</label>
+                                                                        <input type="email" name="peer_email" class="form-control" placeholder="Enter email address" required>
+                                                                    </div>
+
+                                                                    <div class="form-group">
+                                                                        <button type="submit" class="btn btn-primary">Send invite</button>
+                                                                    </div>
+                                                                    
+                                                                </form>
+                                                            </div>    
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                </div>
+                                            </div>
+                                            </div>`;
+
+
+            $("#modals-loader").html(invitation_form);
+            $("#invitation-form-modal").modal('show');
+
+
+
+            //handle sending invitation..
+            const sendInviteForm = document.querySelector("#invite-peer-form");
+
+            sendInviteForm.addEventListener("submit", async function(e){
+                e.preventDefault();
+
+                const peer_email = this.peer_email.value.trim().length > 0 ? this.peer_email.value.trim() : null;
+
+                if(peer_email != null){
+                     //send the email..
+                     const check_response = await sendEmailToPeer(peer_email, id);
+
+                    if(check_response == true){
+                        location.href = "waiting.html";
+                    }
+
+                }
+                   
+
+                    
+
+
+
+            })
+
+
+                    
+
+            }
+
+
+            async function sendEmailToPeer(email, payload){
+                //send the email..
+  
+               const feedback = await axios.post('http://localhost:5000/peerserver/email/send', {
+                    recepient: email,
+                    payload:  payload
+
+                });
+
+                if(feedback.data.code == "success"){
+                    return true;
+                }else{
+                    return false;
+                }
+
+
+            }
+
+
+            
+
+
+        </script>
+</body>
+</html>
