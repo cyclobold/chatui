@@ -61,7 +61,7 @@
                 location.href='/';
             }
 
-
+              const peer = new Peer();
             joinChatForm.addEventListener("submit", function(e){
                 e.preventDefault();
 
@@ -71,9 +71,21 @@
                 if(inv_id != null){
                     //save this to localhost..
                     //go to the next page
-                    localStorage.setItem(`peer-key`, JSON.stringify(inv_id));
+                    localStorage.setItem('peer-key', inv_id);
 
-                    location.href='receive_chat.html';
+                    //set the inv_id
+
+                    conn = peer.connect(inv_id);
+
+                    conn.on("open", function(){
+                            location.href='receive_chat.html';
+                            //console.log("Connected to peer: ", conn.peer);
+                    });
+                    
+                  
+
+                    
+                    
 
                 }
 

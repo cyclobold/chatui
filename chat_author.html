@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+    
+    
+</head>
+<body>
+    
+        <div class="container">
+            <div class="chatbox">
+                <div class="col-1">
+
+                    <!-- <div class="msg-row msg-row2">
+                        <img src="image/img-three.png" alt="msg-img" class="pic2">
+                        <div class="msg-text">
+                            <h2>Peer</h2>
+                            <p>I love you too.</p>
+                        </div>
+                    </div> -->
+
+                    <div class="msg-row">
+                        <div class="msg-text">
+                            <h2>Hello</h2>
+                            <p>This is the beginning of your chat with Peer...<br> Type your first message</p>
+                        </div>
+                        <!-- <img src="image/img-one.png" alt="msg-img" class="pic"> -->
+                    </div>
+                    <hr>
+                    <div class="send-area">
+                        <input type="text" placeholder="Type your messages here..." >
+                        <button class='send-btn'>Send</button>
+                    </div>
+    
+                </div>
+              
+            </div>
+        </div>
+
+
+
+        <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-fQybjgWLrvvRgtW6bFlB7jaZrFsaBXjsOMm/tB9LTS58ONXgqbR9W8oWht/amnpF" crossorigin="anonymous"></script>
+        <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
+        <script src="vendors/js/loaders.js"></script>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", function(){
+
+
+                let connectionKey = localStorage.getItem('_bold_chat_key');
+
+                if(connectionKey != null || connectionKey != undefined){
+
+                    //check if this invitation has been accepted..
+                    connectionKey = JSON.parse(connectionKey);
+                    let peer = new Peer(connectionKey);
+
+                    peer.on("connection", function(conn){
+                        console.log("Connection Key: ", connectionKey);
+                        //once the visitor has accepted the invitation..
+                        //go to the chat_author interface
+                        conn.on("open", function(){
+            
+                            //alert the recepient that chat is ready..
+                            //retrieve chat data from storage..
+                            
+                    
+                        });
+
+                        conn.on("data", function(data){
+                                console.log("hey data: ", data);
+
+                            })
+
+
+                    })
+                    
+
+                }
+
+
+
+
+
+
+            })
+
+        </script>
+ 
+</body>
+</html>

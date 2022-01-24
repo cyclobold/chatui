@@ -45,11 +45,35 @@
             if(connectionKey != null || connectionKey != undefined){
 
                 //check if this invitation has been accepted..
-                let peer = new Peer();
+                connectionKey = JSON.parse(connectionKey);
+                let peer = new Peer(connectionKey);
+
+                
+                peer.on("connection", function(conn){
+                    console.log("Connection Key: ", connectionKey);
+                    //once the visitor has accepted the invitation..
+                    //go to the chat_author interface
+                    conn.on("open", function(){
+                        //receiver connected..
+                        startPreChatLoader(1000, "chat_author.html");
+
+                        //alert the recepient that chat is ready..
+
+                        conn.send('READY');
+                        
+
+                    })
+
+
+                })
 
 
 
             }
+
+
+
+            
             
 
         </script>

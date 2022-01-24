@@ -130,7 +130,22 @@
                      const check_response = await sendEmailToPeer(peer_email, id);
 
                     if(check_response == true){
-                        location.href = "waiting.html";
+                        //redirect to the waiting page...
+                        //create this user chatBox
+
+                        const chat_data = {
+                            peer_email: peer_email,
+                            connection_id: id,
+                            time: new Date().getTime()
+                        }
+
+                        const create_chat_data = await createChatDataBox(chat_data);
+
+                        if(create_chat_data == "created"){
+                            location.href = "waiting.html";
+                        }
+
+                        
                     }
 
                 }
@@ -164,6 +179,17 @@
                 }
 
 
+            }
+
+
+
+            async function createChatDataBox(chat_data){
+
+                const feedback = await axios.post("http://localhost:5000/peerserver/chat/create", {
+                    chat_data: chat_data
+                });
+
+                
             }
 
 
