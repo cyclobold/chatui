@@ -165,12 +165,13 @@
                      }
 
                      const check_response = await sendEmailToPeer(peer_email, author, id);
+                     let chat_data = null;
 
                     if(check_response == true){
                         //redirect to the waiting page...
                         //create this user chatBox
 
-                        const chat_data = {
+                        chat_data = {
                             peer_email: peer_email,
                             connection_id: id,
                             author: author,
@@ -180,10 +181,7 @@
                         //create important information about this chat..
                         const create_chat_data = await createChatDataBox(chat_data);
 
-                        if(create_chat_data == "created"){
-                            location.href = "waiting.html";
-                        }
-
+            
                         
                     }
 
@@ -229,12 +227,16 @@
                 });
 
                 if(feedback.data.code == "success"){
+
+                    //save the chat_data information to localStorage
+                    localStorage.setItem("_bold_chat_data", JSON.stringify(chat_data));
+
                     //go to the waiting phase..
                     location.href='waiting.html';
 
                 }
 
-                
+
             }
 
 
