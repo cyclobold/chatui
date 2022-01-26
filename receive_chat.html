@@ -77,13 +77,24 @@
 
                     conn.on("open", function(){
 
-                        console.log("COnnected: ");
+                        console.log("COnnected: ", conn.peer);
 
                         //reset the style ..
                         document.querySelector(".starting-soon").style.display = "none";
                         document.querySelector(".chatbox").style.display = "flex";
 
+
+                        conn.on("data", function(data){
+
+                            console.log("Message: ", data)
+
+                        })
+
+                        conn.send("From here")
+
                     })
+
+                   
 
 
 

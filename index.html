@@ -23,6 +23,26 @@
 
                                 <hr>
 
+                                <form class='form' id="create-invite-form">
+                                    <div class='form-group'>
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <label>Enter your name</label>
+                                                <input type="text" name="author_name" class="form-control">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class='form-group'>
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <label>Enter your email</label>
+                                                <input type="email" name="author_email" class="form-control">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+
                                 <button type='button' class='btn btn-md btn-primary' id="create-invitation-btn">Create an Invitation</button>
                         </div>
                 </div>
@@ -37,38 +57,48 @@
         <script src="vendors/js/axios.min.js"></script>
         <script>
             const createInvitationBtn = document.querySelector("#create-invitation-btn");
+            const createInviteForm = document.querySelector("#create-invite-form");
 
             
 
             createInvitationBtn.addEventListener("click", function(){
 
-                //start the loader..
-                startLoader();
+
+
+                //ensure that the fields are filled
+                if(createInviteForm.author_email.value.trim().length != 0 && createInviteForm.author_name.value.trim().length != 0){
+
+                          //start the loader..
+                         startLoader();
+
+                        const peer = new Peer();
+                        //Generate the session id..
+                        peer.on("open", function(id){
+                            console.log("COnnection : ", id);
+
+                            //id has been generated so redirected the user to the waiting page..
+                            //save to localhost..
+                            localStorage.setItem("_bold_chat_key", JSON.stringify(id));
+
+                            stopLoader();
+
+                            //show the send modal form
+                            showInvitationForm(id, createInviteForm.author_email.value.trim(), createInviteForm.author_name.value.trim());
+
+        
+
+                        })
+
+                }
                
-                const peer = new Peer();
-                //Generate the session id..
-                peer.on("open", function(id){
-                    console.log("COnnection : ", id);
-
-                    //id has been generated so redirected the user to the waiting page..
-                    //save to localhost..
-                    localStorage.setItem("_bold_chat_key", JSON.stringify(id));
-
-                   stopLoader();
-
-                    //show the send modal form
-                    showInvitationForm(id);
-
-   
-
-                })
+           
 
 
             })
 
 
 
-            function showInvitationForm(id){
+            function showInvitationForm(id, author_email, author_name){
 
                 const invitation_form = `<div class="modal" tabindex="-1" id="invitation-form-modal" data-backdrop='false'>
                                             <div class="modal-dialog">
@@ -83,6 +113,7 @@
                                                     <div class="container">
                                                         <div class="row">
                                                             <div class="col-md-12">
+                                                                <h5>Hello ${author_name}</h5>
                                                                 <h5>Your connection key is <br><mark>${id}</mark></h5>
                                                                 <hr>
                                                                 <p>You can copy and send this connection key to someone directly or use this form to email it to them...</p>
@@ -127,7 +158,13 @@
 
                 if(peer_email != null){
                      //send the email..
-                     const check_response = await sendEmailToPeer(peer_email, id);
+
+                     const author = {
+                         author_email: author_email,
+                         author_name: author_name
+                     }
+
+                     const check_response = await sendEmailToPeer(peer_email, author, id);
 
                     if(check_response == true){
                         //redirect to the waiting page...
@@ -136,9 +173,11 @@
                         const chat_data = {
                             peer_email: peer_email,
                             connection_id: id,
+                            author: author,
                             time: new Date().getTime()
                         }
 
+                        //create important information about this chat..
                         const create_chat_data = await createChatDataBox(chat_data);
 
                         if(create_chat_data == "created"){
@@ -163,13 +202,13 @@
             }
 
 
-            async function sendEmailToPeer(email, payload){
+            async function sendEmailToPeer(email, author, payload){
                 //send the email..
   
                const feedback = await axios.post('http://localhost:5000/peerserver/email/send', {
                     recepient: email,
-                    payload:  payload
-
+                    payload:  payload,
+                    author: author
                 });
 
                 if(feedback.data.code == "success"){
@@ -188,6 +227,12 @@
                 const feedback = await axios.post("http://localhost:5000/peerserver/chat/create", {
                     chat_data: chat_data
                 });
+
+                if(feedback.data.code == "success"){
+                    //go to the waiting phase..
+                    location.href='waiting.html';
+
+                }
 
                 
             }
