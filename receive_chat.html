@@ -23,7 +23,8 @@
             
             <div class="chatbox">
                 <div class="col-1">
-                
+                    
+                    <div id="messages-box">
                     <div class="msg-row msg-row2">
                         <!-- <img src="image/img-three.png" alt="msg-img" class="pic2"> -->
                         <div class="msg-text">
@@ -38,11 +39,14 @@
                         </div>
                         <img src="image/img-one.png" alt="msg-img" class="pic">
                     </div> -->
-                    <hr>
-                    <div class="send-area">
-                        <input type="text" placeholder="Type your messages here..." >
-                        <button class='send-btn'>Send</button>
+
+
                     </div>
+                    <hr>
+                    <form class="send-area" id="send-area" method='POST'>
+                        <input type="text" placeholder="Type your messages here..." id='message-field' name='message_field'>
+                        <button class='send-btn' id='send-message-btn'>Send</button>
+                    </form>
     
                 </div>
             </div>
@@ -54,66 +58,253 @@
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-fQybjgWLrvvRgtW6bFlB7jaZrFsaBXjsOMm/tB9LTS58ONXgqbR9W8oWht/amnpF" crossorigin="anonymous"></script>
         <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
         <script src="vendors/js/loaders.js"></script>
+        <script src="vendors/js/axios.min.js"></script>
+        <script src="https://js.pusher.com/7.0/pusher.min.js"></script>
         <script>
 
-            //subscribe to the EventSource
-            let event_source = new EventSource("http://localhost:5000/peerserver/connections/trigger-recepient-reload", { withCredentials: false});
+          (function(){
+                        let peer = new Peer();
 
-            event_source.onmessage = function(event){
+                        //Get started ..
+                        let peerKey = localStorage.getItem("peer-key");
+                        let messages_box = document.querySelector("#messages-box");
+                        let activeConnection =  null;
+                        let sendMessageBtn = document.querySelector("#send-message-btn");
+                        let messageField = document.querySelector("#message-field");
+                        let sendArea = document.querySelector('#send-area');
+                        var pusher = new Pusher('692bb295a55675b8521d', {
+                            cluster: 'eu'
+                        });
+                        var channel = pusher.subscribe("chat-connections");
 
-                console.log("Data from server: ", event);
-
-            }
-            //Get started ..
-            let peerKey = localStorage.getItem("peer-key");
-            
-            //submit
-            LoadingChatInterfaceForm = document.querySelector("#loading-receive-chat-interface");
-
-            //manually submit
-
-            let peer = new Peer();
-            
-            setTimeout(function(){
-                //LoadingChatInterfaceForm.submit();
-               
-                //pick this up
-                LoadingChatInterfaceForm.addEventListener("submit", function(e){
-                    e.preventDefault();
-                    //once submitted 
-
-                    conn = peer.connect(peerKey);
-
-                    conn.on("open", function(){
-
-                        console.log("COnnected: ", conn.peer);
-
-                        //reset the style ..
-                        document.querySelector(".starting-soon").style.display = "none";
-                        document.querySelector(".chatbox").style.display = "flex";
+                        //signal the peer
+                        signalPeer();
 
 
-                        conn.on("data", function(data){
 
-                            console.log("Message: ", data)
+                        function signalPeer(){
+
+                            //check if there is an active connection..
+                            retrieveActiveConnections().then((activeConnections) =>{
+
+                                //get this peer's email..
+                                let chat_peers = JSON.parse(activeConnections.chat_data.peers);
+                                let user_email = chat_peers.peer_email;
+
+                                //load these chats...
+                                let msgs = '';
+                                for(let i = 0; i < activeConnections.chat_messages.length; i++){
+                                        if(activeConnections.chat_messages[i].author_email == user_email ){
+                                            //this is the current user
+                                            msgs += `<div class="msg-row msg-row2">
+                                                    <!-- <img src="image/img-three.png" alt="msg-img" class="pic2"> -->
+                                                    <div class="msg-text">
+                                                        <h2>You</h2>
+                                                        <p>${activeConnections.chat_messages[i].message}</p>
+                                                    </div>
+                                                </div>`;
+                                        }else{
+                                            //this is the host/author email..
+                                            msgs += ` <div class="msg-row">
+                                                        <div class="msg-text">
+                                                            <h2>Host</h2>
+                                                            <p>${activeConnections.chat_messages[i].message}</p>
+                                                        </div>
+                                                    </div>`;
+
+                                        }
+
+
+
+                                }
+
+                                messages_box.innerHTML += `${msgs}`;
+                                messages_box.scrollTop = messages_box.scrollHeight;
+
+                            })
+
+
+                        }
+
+
+
+
+                        async function retrieveActiveConnections(){
+
+                            feedback = await axios.get(`http://localhost:5000/peerserver/connections/peer/check?connectionKey=${peerKey}`);
+
+                            if(feedback.data.code == "chat-messages-available"){
+
+                                return feedback.data.data;
+
+                            }
+
+                        }
+
+
+
+                        //Listen to the page reload event
+                        channel.bind("author-page-reloaded", function(data){
+                            //
+                            //reconnect to the author..
+                            if(data.code == "author-page-reloaded"){
+                                //refresh the page..
+                                //reconnect to the host
+                                console.log("tyojng to send");
+                                //console.log(conn.open);
+                                if(conn == null || conn.open == false){
+                                    conn = peer.connect(peerKey);
+                                }
+
+                                conn.on('open', function(){
+                                        conn.send("still-connected");
+
+                                        conn.on("data", function(data){
+
+                                            //load the data into the chat interface..
+                                            
+                                            messages_box.innerHTML += `<div class="msg-row">
+                                                                <div class="msg-text">
+                                                                    <h2>Host</h2>
+                                                                    <p>${data}</p>
+                                                                </div>
+                                                               <!--<img src="image/img-one.png" alt="msg-img" class="pic"> -->
+                                                            </div>`;
+                                            messages_box.scrollTop = messages_box.scrollHeight;
+
+
+                                        })
+
+                                })
+
+
+                                
+
+                                
+                                // conn.on("open", function(){
+
+                                //     
+                                    
+
+
+                                // })
+                                
+
+                            }
 
                         })
 
-                        conn.send("From here")
-
-                    })
-
-                   
 
 
 
 
-                    return false;
+                        //submit
+                        LoadingChatInterfaceForm = document.querySelector("#loading-receive-chat-interface");
 
-                })
-                LoadingChatInterfaceForm.dispatchEvent(new Event("submit"));
+                        //manually submit
 
-            }, 3000);
+                        // let peer = new Peer();
+
+                        setTimeout(function(){
+                            //LoadingChatInterfaceForm.submit();
+                        
+                            //pick this up
+                            LoadingChatInterfaceForm.addEventListener("submit", function(e){
+                                e.preventDefault();
+                                //once submitted 
+
+                                conn = peer.connect(peerKey);
+
+                                conn.on("open", function(){
+
+                                    activeConnection = conn;
+
+                                    console.log("COnnected: ", conn.peer);
+
+                                    //reset the style ..
+                                    document.querySelector(".starting-soon").style.display = "none";
+                                    document.querySelector(".chatbox").style.display = "flex";
+
+
+                                    conn.on("data", function(data){
+
+                                        //add the message ..
+                                        messages_box.innerHTML += `<div class="msg-row">
+                                                                <div class="msg-text">
+                                                                    <h2>Host</h2>
+                                                                    <p>${data}</p>
+                                                                </div>
+                                                               <!--<img src="image/img-one.png" alt="msg-img" class="pic"> -->
+                                                            </div>`;
+                                        messages_box.scrollTop = messages_box.scrollHeight;
+
+                                    })
+
+                                    conn.send("From here")
+
+                                })
+
+                            
+
+
+
+
+                                return false;
+
+                            })
+                            LoadingChatInterfaceForm.dispatchEvent(new Event("submit"));
+
+                        }, 3000);
+
+
+
+                    
+                        sendArea.addEventListener("submit", function(e){
+                                e.preventDefault();
+
+                            if(activeConnection != undefined || activeConnection != null){
+                                //check the field
+                                if(sendArea.message_field.value.trim().length > 0){
+    
+                                    activeConnection = peer.connect(peerKey);
+
+                                    activeConnection.on("open", function(){
+                                     
+                                        activeConnection.send(sendArea.message_field.value.trim());
+
+                                        //feedback = saveChatMessage(authorMessage.value.trim(), new Date().getTime(), connection_id, from_email)
+
+                                        activeConnection.on("data", function(data){
+
+                                        console.log("Peace kk: ", data);
+
+                                        })
+                                    })
+
+                                   
+                                }
+
+                            }
+
+                        })
+
+                        
+                        // if(activeConnection == null || activeConnection == undefined){
+                        //     activeConnection = peer.connect(peerKey);
+
+                        //     activeConnection.on("open", function(){
+
+                        //         activeConnection.on("data", function(data){
+
+                        //             console.log("Peace kk: ", data);
+
+                        //         })
+
+
+                        //     })
+                        // }
+
+         }())
 
           
     

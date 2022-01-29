@@ -14,7 +14,7 @@
         <div class="container">
             <div class="chatbox">
                 <div class="col-1">
-
+                    <div id='messages-box'>
                     <!-- <div class="msg-row msg-row2">
                         <img src="image/img-three.png" alt="msg-img" class="pic2">
                         <div class="msg-text">
@@ -30,9 +30,11 @@
                         </div>
                         <!-- <img src="image/img-one.png" alt="msg-img" class="pic"> -->
                     </div>
+                </div>
                     <hr>
                     <div class="send-area">
                         <input type="text" placeholder="Type your messages here..." id='author_message'>
+                        <!-- <textarea placeholder="Type your messages here..." id='author_message' cols="80" rows='3'></textarea> -->
                         <button type='button' class='send-btn' id='send-chat-btn'>Send</button>
                     </div>
     
@@ -49,21 +51,25 @@
         <script src="vendors/js/loaders.js"></script>
         <script src="vendors/js/cycle.js"></script>
         <script src="vendors/js/axios.min.js"></script>
+        <script src="https://js.pusher.com/7.0/pusher.min.js"></script>
 
         <script>
 
                (async function(){
                     connectionKey = localStorage.getItem("_bold_chat_key");
                     let hasConnected = localStorage.getItem("hasConnected");
-                    let both_browsers_reload = false
+                    let both_browsers_reload = false;
+                    let sendChatBtn = document.querySelector("#send-chat-btn");
+                    let authorMessage = document.querySelector("#author_message");
+                    let messages_box = document.querySelector("#messages-box");
+                    let active_conn = null;
+                    let from_email = null;
                     
 
                     //signal the other peer that the page has reloaded
                     signalPeer();
                     
                    
-
-
 
                     /**
                      * Signals the peer
@@ -72,6 +78,7 @@
                      * 
                      */
                     function signalPeer(){
+
 
                         //checks if there is an active connection
                         retrieveActiveConnections().then((activeConnections) =>{
@@ -88,10 +95,120 @@
 
                             from_email = activeConnections.result.from_email;
                             recepient_email = activeConnections.result.to_email;
+                            connection_id = activeConnections.chat_data.connection_id;
+
+                            
 
 
                             //prompt the other browser to reconnect..
                             triggerPeerReconnection(from_email, recepient_email);
+
+
+
+                            peer.on('connection', function(conn){
+
+                                active_conn = conn;
+                                //receive confirmaation from the peer
+                                conn.on('data', function(data){
+
+                                    if(data == "still-connected"){
+                                        //continue your chat...
+
+                                        console.log(data);
+
+                                        //load chats..
+                                        //get all the chat data
+
+                                        //bring in the loader
+                                        
+                                        let chat_code;
+                                        //console.log("Msg box: ", messages_box);
+
+                                        if(activeConnections.chat_messages.length != 0){
+                                            //loop through this and display on page
+                                            msgs_box = '';
+                                            for(let i = 0; i < activeConnections.chat_messages.length; i++){
+                                               // console.log("This: ", activeConnections.chat_messages[i].author_email);
+                                                
+                                                if(String(activeConnections.chat_messages[i].author_email) == "profbatuka@gmail.com"){
+                                                    //this is the host
+                                                    //console.log("Then: ", activeConnections.chat_messages[i].author_email);
+                                                    msgs_box += `<div class="msg-row">
+                                                                    <div class="msg-text">
+                                                                        <h2>You</h2>
+                                                                        <p>${activeConnections.chat_messages[i].message}</p>
+                                                                    </div>
+                                                                    <!-- <img src="image/img-one.png" alt="msg-img" class="pic"> -->
+                                                                </div>`;
+                                                }else{
+                                                    msgs_box += `<div class="msg-row msg-row2">
+                                                                    <img src="image/img-three.png" alt="msg-img" class="pic2">
+                                                                    <div class="msg-text">
+                                                                        <h2>Peer</h2>
+                                                                        <p>I love you too.</p>
+                                                                    </div>
+                                                                </div`;
+
+                                                }
+
+                                            }
+
+
+                                            messages_box.innerHTML = `${msgs_box}`;
+                                            
+                                        }
+                                         //scroll down
+                                    messages_box.scrollTop = messages_box.scrollHeight;
+
+
+                                    }else{
+                                        console.log(data);
+
+
+                                        //data is not "still-connected"
+                                        //retrieve chats..
+                                        if(activeConnections.chat_messages && activeConnections.chat_messages.length > 0){
+                                            //there is pending chat..
+                                            //loop through this and display on page
+                                            msgs_box = '';
+                                            for(let i = 0; i < activeConnections.chat_messages.length; i++){
+                                               // console.log("This: ", activeConnections.chat_messages[i].author_email);
+                                                
+                                                if(String(activeConnections.chat_messages[i].author_email) == "profbatuka@gmail.com"){
+                                                    //this is the host
+                                                    //console.log("Then: ", activeConnections.chat_messages[i].author_email);
+                                                    msgs_box += `<div class="msg-row">
+                                                                    <div class="msg-text">
+                                                                        <h2>You</h2>
+                                                                        <p>${activeConnections.chat_messages[i].message}</p>
+                                                                    </div>
+                                                                    <!-- <img src="image/img-one.png" alt="msg-img" class="pic"> -->
+                                                                </div>`;
+                                                }else{
+                                                    msgs_box += `<div class="msg-row msg-row2">
+                                                                    <img src="image/img-three.png" alt="msg-img" class="pic2">
+                                                                    <div class="msg-text">
+                                                                        <h2>Peer</h2>
+                                                                        <p>I love you too.</p>
+                                                                    </div>
+                                                                </div`;
+
+                                                }
+
+                                            }
+
+
+                                            messages_box.innerHTML = `${msgs_box}`;
+                                            messages_box.scrollTop = messages_box.scrollHeight;
+
+                                        }
+
+                                    }
+
+                                })
+
+
+                            })
 
 
                         })
@@ -103,12 +220,15 @@
 
                     async function retrieveActiveConnections(){
 
+        
                         //get the user data
                         let chat_data = localStorage.getItem("_bold_chat_data");
+
                         
+                    
+                        chat_data = chat_data != undefined || chat_data != null ? JSON.parse(chat_data) : null;
 
-                        chat_data = chat_data != undefined && chat_data != null ? JSON.parse(chat_data) : null;
-
+                        
 
                         if(chat_data != null){
 
@@ -116,18 +236,21 @@
                                 chat_data: chat_data
                             });
 
+                            console.log(feedback);
+
 
                             if(feedback.data.code == "success"){
                                 //return data about active connections
-
+                                console.log(feedback.data);
                                 return feedback.data.data;
 
 
                             }
+                        }else{
+
+                            return null;
+
                         }
-
-
-    
 
 
                     }
@@ -137,17 +260,88 @@
 
                     async function triggerPeerReconnection(from_email, to_email){
 
+                        //alert('works');
+
                         const author_email = from_email;
                         const recepient_email = to_email;
                         const reload_time = new Date().getTime();
 
-                        //const feedback = await axios.get(`http://localhost:5000/peerserver/connections/trigger-recepient-reload?author=${author_email}&&recepient=${recepient_email}&&reload_time=${reload_time}`);
+                        const feedback = await axios.get(`http://localhost:5000/peerserver/connections/trigger-recepient-reload?author=${author_email}&&recepient=${recepient_email}&&reload_time=${reload_time}`);
 
 
+                        //console.log("Triggered from author ");
 
 
 
                     }
+
+
+                    async function saveChatMessage(message, time_created, connection_id, host_email){
+
+                        feedback = await axios.post("http://localhost:5000/peerserver/chatmessage/author/send", {
+                            message: message,
+                            time_created: time_created,
+                            connection_id: connection_id,
+                            host_email: host_email
+                        })
+
+                        if(feedback.data.code != "error"){
+                            return true;
+                        }
+
+
+
+                    }
+
+
+
+
+                    //check when the sendMsgBtn is clicked
+                    sendChatBtn.addEventListener("click", function(){
+
+                        
+                        if(active_conn != null){
+                            
+                            //check whats in the text fiels
+                            if(authorMessage.value.trim().length > 0){
+
+                                active_conn.send(authorMessage.value.trim());
+
+                                //clear the text field..
+                                //save the chat message
+                                feedback = saveChatMessage(authorMessage.value.trim(), new Date().getTime(), connection_id, from_email)
+                                
+                                //add to the chat messages interface
+                                if(feedback){
+                                    //console.log("Message sent..");
+                                    new_msg =  `<div class="msg-row">
+                                                                    <div class="msg-text">
+                                                                        <h2>You</h2>
+                                                                        <p>${authorMessage.value.trim()}</p>
+                                                                    </div>
+                                                                    <!-- <img src="image/img-one.png" alt="msg-img" class="pic"> -->
+                                                                </div>`;
+
+                                    
+                                    //add to the interface
+                                    messages_box.innerHTML += `${new_msg}`;
+
+                                    //scroll down
+                                    messages_box.scrollTop = messages_box.scrollHeight;
+                                
+                                }
+
+
+                        
+                            }
+
+                        }
+
+                    })
+
+
+                 
+
 
 
 
