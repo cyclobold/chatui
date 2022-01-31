@@ -53,44 +53,72 @@
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-fQybjgWLrvvRgtW6bFlB7jaZrFsaBXjsOMm/tB9LTS58ONXgqbR9W8oWht/amnpF" crossorigin="anonymous"></script>
         <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
         <script src="vendors/js/loaders.js"></script>
+        <script src="vendors/js/axios.min.js"></script>
         <script>
-            const cancelInvitationBtn = document.querySelector("#cancel-invitation-btn");
-            const joinChatForm = document.querySelector("#join-chat-form");
+            
+           (function(){
 
-            cancelInvitationBtn.onclick = function(){
-                location.href='/';
-            }
+                 //Pick the invitation btn and chat forms
+                const cancelInvitationBtn = document.querySelector("#cancel-invitation-btn");
+                const joinChatForm = document.querySelector("#join-chat-form");
+                const API_URL = 'https://testing-peerserver.herokuapp.com';
 
-              const peer = new Peer();
-            joinChatForm.addEventListener("submit", function(e){
-                e.preventDefault();
+                let peer = new Peer();
 
-                //submit the form..
-                const inv_id = this.invitation_id.value.trim().length > 0 ? this.invitation_id.value.trim() : null;
-
-                if(inv_id != null){
-                    //save this to localhost..
-                    //go to the next page
-                    localStorage.setItem('peer-key', inv_id);
-
-                    //set the inv_id
-
-                    conn = peer.connect(inv_id);
-
-                    conn.on("open", function(){
-                            location.href='receive_chat.html';
-                            //console.log("Connected to peer: ", conn.peer);
-                    });
-                    
-                  
+                joinChatForm.addEventListener("submit", async function(e){
+                    e.preventDefault();
 
                     
-                    
+                    const inv_id = this.invitation_id.value.trim().length > 0 ? this.invitation_id.value.trim() : null;
 
-                }
+                    if(inv_id != null){
+                        
+                        //confirm this inv_id
+                        checkFeedback = await confirmKey(inv_id);
+
+                        if(checkFeedback.data.isValid == true){
+                            //this code is valid
+                            
+                            chat_data = checkFeedback.data.chat_data;
+
+                            localStorage.setItem('peer-key', inv_id);
+
+                            //save this chat data..
+                            localStorage.setItem("chat_data", JSON.stringify(chat_data));
+
+                            conn = peer.connect(inv_id);
+
+                            conn.on("open", function(){
+                                location.href='receive_chat.html';
+                                //console.log("Connected to peer: ", conn.peer);
+                             });
 
 
-            })
+                        }
+
+                    }
+                
+
+
+                })
+
+
+
+
+                async function confirmKey(peerKey){
+
+                        //check this key for confirmation..
+                        const feedback = await axios.get(`${API_URL}/peerserver/chat/data/check_key?peerKey=${peerKey}`);
+
+                        return feedback.data;
+
+
+                }       
+
+
+
+
+           }());
 
         </script>
 </body>

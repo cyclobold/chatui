@@ -58,7 +58,7 @@
         <script>
             const createInvitationBtn = document.querySelector("#create-invitation-btn");
             const createInviteForm = document.querySelector("#create-invite-form");
-
+            const API_URL = 'https://testing-peerserver.herokuapp.com';
             
 
             createInvitationBtn.addEventListener("click", function(){
@@ -203,7 +203,7 @@
             async function sendEmailToPeer(email, author, payload){
                 //send the email..
   
-               const feedback = await axios.post('http://localhost:5000/peerserver/email/send', {
+               const feedback = await axios.post(`${API_URL}/peerserver/email/send`, {
                     recepient: email,
                     payload:  payload,
                     author: author
@@ -222,7 +222,7 @@
 
             async function createChatDataBox(chat_data){
 
-                const feedback = await axios.post("http://localhost:5000/peerserver/chat/create", {
+                const feedback = await axios.post(`${API_URL}/peerserver/chat/create`, {
                     chat_data: chat_data
                 });
 

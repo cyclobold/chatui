@@ -23,7 +23,7 @@
             
             <div class="chatbox">
                 <div class="col-1">
-                    
+                    <button type='button' style='height: 40px; width: 250px;' id="disconnect-btn">Disconnect from Host</button>
                     <div id="messages-box">
                     <div class="msg-row msg-row2">
                         <!-- <img src="image/img-three.png" alt="msg-img" class="pic2"> -->
@@ -45,7 +45,7 @@
                     <hr>
                     <form class="send-area" id="send-area" method='POST'>
                         <input type="text" placeholder="Type your messages here..." id='message-field' name='message_field'>
-                        <button class='send-btn' id='send-message-btn'>Send</button>
+                        <button type='button' class='send-btn' id='send-message-btn'>Send</button>
                     </form>
     
                 </div>
@@ -60,6 +60,8 @@
         <script src="vendors/js/loaders.js"></script>
         <script src="vendors/js/axios.min.js"></script>
         <script src="https://js.pusher.com/7.0/pusher.min.js"></script>
+        <script src="https://unpkg.com/dayjs@1.8.21/dayjs.min.js"></script>
+        <script src="https://unpkg.com/dayjs@1.8.21/plugin/relativeTime.js"></script>
         <script>
 
           (function(){
@@ -69,9 +71,17 @@
                         let peerKey = localStorage.getItem("peer-key");
                         let messages_box = document.querySelector("#messages-box");
                         let activeConnection =  null;
+                        let conn = null;
                         let sendMessageBtn = document.querySelector("#send-message-btn");
                         let messageField = document.querySelector("#message-field");
                         let sendArea = document.querySelector('#send-area');
+                        var chat_data = localStorage.getItem("chat_data");
+                        let disconnectBtn = document.querySelector("#disconnect-btn");
+
+                        const API_URL = 'https://testing-peerserver.herokuapp.com';
+
+                        dayjs.extend(window.dayjs_plugin_relativeTime);
+
                         var pusher = new Pusher('692bb295a55675b8521d', {
                             cluster: 'eu'
                         });
@@ -84,9 +94,13 @@
 
                         function signalPeer(){
 
+                            //start the loader...
+
+
+
                             //check if there is an active connection..
                             retrieveActiveConnections().then((activeConnections) =>{
-
+                                console.log("Active Connections: ", activeConnections);
                                 //get this peer's email..
                                 let chat_peers = JSON.parse(activeConnections.chat_data.peers);
                                 let user_email = chat_peers.peer_email;
@@ -94,6 +108,11 @@
                                 //load these chats...
                                 let msgs = '';
                                 for(let i = 0; i < activeConnections.chat_messages.length; i++){
+
+                                   
+
+                                    time_format = dayjs(activeConnections.chat_messages[i].date_created).fromNow();
+
                                         if(activeConnections.chat_messages[i].author_email == user_email ){
                                             //this is the current user
                                             msgs += `<div class="msg-row msg-row2">
@@ -101,6 +120,7 @@
                                                     <div class="msg-text">
                                                         <h2>You</h2>
                                                         <p>${activeConnections.chat_messages[i].message}</p>
+                                                        <p><small>${time_format}</small></p>
                                                     </div>
                                                 </div>`;
                                         }else{
@@ -109,6 +129,7 @@
                                                         <div class="msg-text">
                                                             <h2>Host</h2>
                                                             <p>${activeConnections.chat_messages[i].message}</p>
+                                                            <p><small>${time_format}</small></p>
                                                         </div>
                                                     </div>`;
 
@@ -121,6 +142,8 @@
                                 messages_box.innerHTML += `${msgs}`;
                                 messages_box.scrollTop = messages_box.scrollHeight;
 
+                                //stop the loader..
+
                             })
 
 
@@ -131,7 +154,7 @@
 
                         async function retrieveActiveConnections(){
 
-                            feedback = await axios.get(`http://localhost:5000/peerserver/connections/peer/check?connectionKey=${peerKey}`);
+                            feedback = await axios.get(`${API_URL}/peerserver/connections/peer/check?connectionKey=${peerKey}`);
 
                             if(feedback.data.code == "chat-messages-available"){
 
@@ -157,16 +180,27 @@
                                 }
 
                                 conn.on('open', function(){
-                                        conn.send("still-connected");
+                                        conn.send({
+                                            code: "still-connected",
+                                            message: "still-connected",
+                                            payload: {
+                                                time_created: new Date()
+                                            }
+                                        });
 
                                         conn.on("data", function(data){
 
                                             //load the data into the chat interface..
+
+                                            console.log("Data received: ", data);
+
+                                            time_format = dayjs(data.payload.time_created).fromNow()
                                             
                                             messages_box.innerHTML += `<div class="msg-row">
                                                                 <div class="msg-text">
                                                                     <h2>Host</h2>
-                                                                    <p>${data}</p>
+                                                                    <p>${data.message}</p>
+                                                                    <p><small>${time_format}</small></p>
                                                                 </div>
                                                                <!--<img src="image/img-one.png" alt="msg-img" class="pic"> -->
                                                             </div>`;
@@ -228,11 +262,16 @@
 
                                     conn.on("data", function(data){
 
+                                        //console.log("Data received 2: ", data);
+
+                                        time_format = dayjs(data.payload.time_created).fromNow();
+
                                         //add the message ..
                                         messages_box.innerHTML += `<div class="msg-row">
                                                                 <div class="msg-text">
                                                                     <h2>Host</h2>
-                                                                    <p>${data}</p>
+                                                                    <p>${data.message}</p>
+                                                                    <p><small>${time_format}</small></p>
                                                                 </div>
                                                                <!--<img src="image/img-one.png" alt="msg-img" class="pic"> -->
                                                             </div>`;
@@ -240,7 +279,16 @@
 
                                     })
 
-                                    conn.send("From here")
+                                    conn.send({
+                                        code: "welcome-message",
+                                        message: "From here",
+                                        payload: {
+                                            time_created : new Date()
+                                        }
+                                    })
+
+                                    //clear the field
+
 
                                 })
 
@@ -259,7 +307,7 @@
 
 
                     
-                        sendArea.addEventListener("submit", function(e){
+                        sendMessageBtn.addEventListener("click", async function(e){
                                 e.preventDefault();
 
                             if(activeConnection != undefined || activeConnection != null){
@@ -268,23 +316,91 @@
     
                                     activeConnection = peer.connect(peerKey);
 
-                                    activeConnection.on("open", function(){
+                                    activeConnection.on("open", async function(){
                                      
-                                        activeConnection.send(sendArea.message_field.value.trim());
+                                       
 
-                                        //feedback = saveChatMessage(authorMessage.value.trim(), new Date().getTime(), connection_id, from_email)
+                                        if(chat_data == null){
+                                            //get the chat_data
+                                            chat_data = localStorage.getItem("chat_data");
+                                        }
 
-                                        activeConnection.on("data", function(data){
+                                        if(typeof chat_data == "string"){
+                                            chat_data = JSON.parse(chat_data);
+                                        }
+                                        if(chat_data != null){
 
-                                        console.log("Peace kk: ", data);
+                                            chat_peers = JSON.parse(chat_data.peers);
 
-                                        })
+                                            this_user_email = chat_peers.peer_email;
+                                            //author_email = chat_peers.author_email;
+
+                                            feedback = await saveChatMessage(this_user_email, sendArea.message_field.value.trim(), new Date().getTime(), peerKey);
+                                            console.log("Feedback: ", feedback);
+
+                                            if(feedback.code == "success"){
+
+                                                activeConnection.send({
+                                                    code: "normal",
+                                                    message: sendArea.message_field.value.trim(),
+                                                    payload: feedback.data
+                                                });
+
+                                                
+
+                                                //console.log("Saved: ", feedback);
+
+                                                time_format = dayjs(feedback.data.time_created).fromNow();
+
+                                                messages_box.innerHTML += `<div class="msg-row msg-row2">
+                                                                            <!-- <img src="image/img-three.png" alt="msg-img" class="pic2"> -->
+                                                                            <div class="msg-text">
+                                                                                <h2>You</h2>
+                                                                                <p>${sendArea.message_field.value.trim()}</p>
+                                                                                <p><small>${time_format}</small></p>
+                                                                            </div>
+                                                                        </div>`;
+                                                messages_box.scrollTop = messages_box.scrollHeight;
+                                                $("#send-area")[0].reset();
+
+
+                                                activeConnection.on("data", function(data){
+                                                    //add the data ..
+
+                                                    time_format = dayjs(data.payload.time_created).fromNow()
+                                                    if(data.code == "send_from_author_normal"){
+                                                        //add to the page
+
+                                                        //add the data to the page..
+                                                        messages_box.innerHTML += `<div class="msg-row">
+                                                                <div class="msg-text">
+                                                                    <h2>Host</h2>
+                                                                    <p>${data.message}</p>
+                                                                    <p><small>${time_format}</small></p>
+                                                                </div>
+                                                               <!--<img src="image/img-one.png" alt="msg-img" class="pic"> -->
+                                                            </div>`;
+                                                            messages_box.scrollTop = messages_box.scrollHeight;
+
+
+                                                    }
+
+                                                })
+
+
+                                            }
+
+                                        }
+
+                                       
                                     })
 
                                    
                                 }
 
                             }
+
+                            $('#sendArea')[0].reset();
 
                         })
 
@@ -303,6 +419,40 @@
 
                         //     })
                         // }
+
+                
+                        async function saveChatMessage(sender_email, message, time_created, connectionKey){
+                            //saves the chat message .. 
+
+                            const feedback = await axios.post(`${API_URL}/peerserver/chat/receiver/save`, {
+
+                                message: message,
+                                time_created: time_created,
+                                connectionKey: connectionKey,
+                                sender_email: sender_email
+
+                            } )
+
+                            if(feedback.data.code == "success"){
+                                return feedback.data;
+                            }
+
+                        }
+
+
+                    
+                
+                //Disconnects this user from the connection.. and signals the other peer..
+                disconnectBtn.addEventListener("click", function(){
+
+                    peer.disconnect();
+
+                    // localStorage.clear();
+
+                    // // open(location, '_self').close();
+                    // document.body.innerHTML = "";
+
+                })
 
          }())
 
